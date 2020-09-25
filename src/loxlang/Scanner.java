@@ -49,7 +49,79 @@ public class Scanner {
             case '+': addToken(PLUS); break;
             case ';': addToken(SEMICOLON); break;
             case '*': addToken(STAR); break;
+            case '!': addToken(match('=') ? BANG_EQUAL : BANG); break;
+            case '=': addToken(match('=') ? EQUAL_EQUAL : EQUAL); break;
+            case '<': addToken(match('=') ? LESS_EQUAL : LESS); break;
+            case '>': addToken(match('=') ? GREATER_EQUAL : GREATER); break;
+            case '/':
+                if (match('/')) {
+                    // A comment goes until the end of the line.
+                    while (peek() != '\n' && !isAtEnd()) {
+                        advance();
+                    }
+                } else {
+                    addToken(SLASH);
+                }
+                break;
+            case ' ':
+            case '\r':
+            case '\t':
+                // Ignore whitespace
+                break;
+            case '\n':
+                line++;
+                break;
+            case '"': string(); break;
+            default:
+                Lox.error(line, "Unexpected character.");
+                break;
         }
+    }
+
+    // Searches for the ending '"' value and ads the resulting string to a token
+    private void string() {
+        // Peek until the second " is found
+        while (peek() != '"' && !isAtEnd()) {
+            // increment line if a newline is reached before reaching the end of the string.
+            if (peek() == '\n') {
+                line++;
+            }
+            advance();
+        }
+        // If the end of file is reached before finding a second ", throw an error.
+        if (isAtEnd()) {
+            Lox.error(line, "Unterminated String");
+            return;
+        }
+
+        // Closing '"'
+        advance();
+
+        // Trim surrounding quotes and add
+        String value = source.substring(start + 1, current - 1);
+        addToken(STRING, value);
+    }
+
+    // Checks if the current character matches the passed 'expected' char.
+    // Returns true and increments current by one if the character matches, false otherwise
+    private boolean match(char expected) {
+        if (isAtEnd()) {
+            return false;
+        }
+        if (source.charAt(current) != expected) {
+            return false;
+        }
+
+        current++;
+        return true;
+    }
+
+    // Peeks the next character and returns it
+    private char peek() {
+        if (isAtEnd()) {
+            return '\0';
+        }
+        return source.charAt(current);
     }
 
     // Returns true if we have reached the end of the source code
@@ -72,4 +144,6 @@ public class Scanner {
         String text = source.substring(start, current);
         tokens.add(new Token(type, text, literal, line));
     }
+
+
 }
