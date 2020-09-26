@@ -82,6 +82,10 @@ public class Scanner {
                     while (peek() != '\n' && !isAtEnd()) {
                         advance();
                     }
+                }
+                // Matching for C-style comments /* .... */
+                else if (match('*')) {
+                    comment();
                 } else {
                     addToken(SLASH);
                 }
@@ -175,6 +179,32 @@ public class Scanner {
 
         current++;
         return true;
+    }
+
+    // Checks for the end of a C-style comment (/* ... */)
+    // Nesting is allowed
+    public void comment() {
+
+        while (!isAtEnd()) {
+            // If the next two chars are '*/', we have reached the end of the comment, break.
+            if (peek() == '*' && peekNext() == '/') {
+                break;
+            }
+
+            if (peek() == '\n') {
+                line++;
+            }
+            // If we come across a nested comment, start again.
+            if (peek() == '/' && peekNext() == '*') {
+                current += 2;
+                comment();
+            }
+            if (peek() == '\n' || peek() == '\0') {
+                break;
+            }
+            advance();
+        }
+        current += 2;
     }
 
     // Peeks the next character and returns it
