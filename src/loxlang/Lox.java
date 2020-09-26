@@ -7,7 +7,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Scanner;
+
 
 // TODO: More verbose error messages
 
@@ -61,7 +61,7 @@ public class Lox {
 
     private static void run(String source) {
         Scanner scanner = new Scanner(source);
-        List<Token> tokens = new scanner.scanTokens();
+        List<Token> tokens = scanner.scanTokens();
 
         // Print tokens
         for (Token token :tokens) {

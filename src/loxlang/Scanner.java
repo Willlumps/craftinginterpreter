@@ -10,6 +10,8 @@ import static loxlang.TokenType.*;
 public class Scanner {
     // Raw source code stored as a string
     private final String source;
+    // Reserved keywords
+    private static final Map<String, TokenType> keywords;
     // List used to store generated tokens
     private final List<Token> tokens = new ArrayList<>();
     // Start and current fields are offsets in the string
@@ -20,6 +22,27 @@ public class Scanner {
     // Constructor
     Scanner (String source) {
         this.source = source;
+    }
+
+    static {
+        keywords = new HashMap<>();
+        keywords.put("and",    AND);
+        keywords.put("class",  CLASS);
+        keywords.put("else",   ELSE);
+        keywords.put("false",  FALSE);
+        keywords.put("for",    FOR);
+        keywords.put("fun",    FUN);
+        keywords.put("if",     IF);
+        keywords.put("nil",    NIL);
+        keywords.put("or",     OR);
+        keywords.put("print",  PRINT);
+        keywords.put("return", RETURN);
+        keywords.put("super",  SUPER);
+        keywords.put("this",   THIS);
+        keywords.put("true",   TRUE);
+        keywords.put("var",    VAR);
+        keywords.put("while",  WHILE);
+
     }
 
     List<Token> scanTokens() {
@@ -73,9 +96,47 @@ public class Scanner {
                 break;
             case '"': string(); break;
             default:
-                Lox.error(line, "Unexpected character.");
-                break;
+                if (isDigit(c)) {
+                    number();
+                } else if (isAlpha(c)) {
+                    identifier();
+                } else {
+                    Lox.error(line, "Unexpected character.");
+                    break;
+                }
         }
+    }
+
+    private void identifier() {
+        while (isAlphaNumeric(peek())) {
+            advance();
+        }
+
+        // See if the identifier is a reserved word
+        String text = source.substring(start, current);
+
+        TokenType type = keywords.get(text);
+        if (type == null) {
+            type = IDENTIFIER;
+        }
+        addToken(type);
+    }
+
+    private void number() {
+        while (isDigit(peek())) {
+            advance();
+        }
+
+        // Look for a fractional part.
+        if (peek() == '.' && isDigit(peekNext())) {
+            // Consume the "."
+            advance();
+            while (isDigit(peek())) {
+                advance();
+            }
+        }
+
+        addToken(NUMBER, Double.parseDouble(source.substring(start, current)));
     }
 
     // Searches for the ending '"' value and ads the resulting string to a token
@@ -122,6 +183,28 @@ public class Scanner {
             return '\0';
         }
         return source.charAt(current);
+    }
+
+    // Peeks two characters ahead
+    private char peekNext() {
+        if (current + 1 >= source.length()) {
+            return '\0';
+        }
+        return source.charAt(current + 1);
+    }
+
+    private boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    private boolean isAlpha(char c) {
+        return (c >= 'a' && c <= 'z') ||
+                (c >= 'A' && c <= 'Z') ||
+                c == '_';
+    }
+
+    private boolean isAlphaNumeric(char c) {
+        return isAlpha(c) || isDigit(c);
     }
 
     // Returns true if we have reached the end of the source code
