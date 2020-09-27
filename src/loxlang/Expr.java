@@ -3,6 +3,7 @@ package loxlang;
 import java.util.List;
 
 abstract class Expr {
+
     interface Visitor<R> {
         R visitBinaryExpr(Binary expr);
 
