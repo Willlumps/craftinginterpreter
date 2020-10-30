@@ -16,19 +16,38 @@ class Parser {
     List<Stmt> parse() {
         List<Stmt> statements = new ArrayList<>();
         while (!isAtEnd()) {
-            statements.add(statement());
+            statements.add(declaration());
         }
 
         return statements;
     }
 
     private Expr expression() {
-        return equality();
+        return assignment();
+    }
+
+    private Stmt declaration() {
+        // Look for a variable declaration
+        // If not bubble up the ladder to look for a higher precedence statement.
+        try {
+            if (match(VAR)) {
+                return varDeclaration();
+            }
+            return statement();
+        }
+        // If an error occurs do some recovery stuff and try to get to the next declaration/statement
+        catch (ParseError error) {
+            synchronize();
+            return null;
+        }
     }
 
     private Stmt statement() {
         if (match(PRINT)) {
             return printStatement();
+        }
+        if(match(LEFT_BRACE)) {
+            return new Stmt.Block(block());
         }
 
         return expressionStatement();
@@ -40,10 +59,54 @@ class Parser {
         return new Stmt.Print(expr);
     }
 
+    private Stmt varDeclaration() {
+        // Consume the identifier token for the variabl
+        Token name = consume(IDENTIFIER, "Expect variable name.");
+
+        // If there is no '=' there is no initializer expression and leaves it as null
+
+        Expr initializer = null;
+        if (match(EQUAL)) {
+            initializer = expression();
+        }
+
+        consume(SEMICOLON, "Expect ';' after variable declaration.");
+        return new Stmt.Var(name, initializer);
+    }
+
     private Stmt expressionStatement() {
         Expr expr = expression();
         consume(SEMICOLON, "Expect ';' after expression.");
         return new Stmt.Expression(expr);
+    }
+
+    private List<Stmt> block() {
+        List<Stmt> statements = new ArrayList<>();
+
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            statements.add(declaration());
+        }
+
+        consume((RIGHT_BRACE), "expect '}' after block.");
+        return statements;
+    }
+
+    private Expr assignment() {
+        Expr expr = equality();
+
+        if (match(EQUAL)) {
+            Token equals = previous();
+            Expr value = assignment();
+
+            if (expr instanceof Expr.Variable) {
+                Token name = ((Expr.Variable)expr).name;
+                return new Expr.Assign(name, value);
+            }
+
+            error(equals, "Invalid assignment target.");
+        }
+
+        return expr;
     }
 
     private Expr equality() {
@@ -130,6 +193,10 @@ class Parser {
 
         if (match(NUMBER, STRING)) {
             return new Expr.Literal(previous().literal);
+        }
+
+        if (match(IDENTIFIER)) {
+            return new Expr.Variable(previous());
         }
 
         if (match(LEFT_PAREN)) {

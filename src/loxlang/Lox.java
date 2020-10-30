@@ -50,8 +50,7 @@ public class Lox {
         InputStreamReader input = new InputStreamReader(System.in);
         // Reads text from the converted character stream
         BufferedReader reader = new BufferedReader(input);
-        // Same as while(true)
-        // REPL - Read, Eval, Print, Loop
+        // REPL
         for (;;) {
             System.out.println("> ");
             // Read next line
