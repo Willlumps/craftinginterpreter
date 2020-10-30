@@ -7,7 +7,7 @@ Working my way through the book [Crafting Interpreters](https://craftinginterpre
   * [x] Working Parser
   * [ ] Working Interpreter
     * [x] Evaluating Expressions
-    * [ ] Statements
+    * [x] Statements
     * [ ] Control Flow
     * [ ] Functions
     * [ ] Resolving and Binding
